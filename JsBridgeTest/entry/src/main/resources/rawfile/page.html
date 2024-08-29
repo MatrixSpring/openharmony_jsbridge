@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title></title>
+<!--        <script src="./dsBridge.js" ></script>-->
+        <script src="https://cdn.jsdelivr.net/npm/m-dsbridge/dsBridge.js"></script>
+<!--        <script src="https://cdn.jsdelivr.net/npm/dsbridge/dist/dsbridge.js"> </script>-->
+    <style type="text/css">
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        h1, p, ul, ol {
+            margin: 0;
+            padding: 0;
+        }
+
+        .wrapper {
+            height: 100%;
+            padding: 0 7px;
+            overflow: scroll;
+            padding: 50px 0 0 0;
+        }
+
+        .call-native {
+            margin: 6px;
+           width: calc(100% - 12px);
+           height:40px;
+        }
+
+        .msg-wrapper{
+         position: fixed;
+         left:0;
+         top:0;
+        }
+
+        .msg {
+            margin: 10px;
+            color: red
+        }
+
+
+    </style>
+
+</head>
+<body>
+<div class="msg-wrapper">
+    <p>新页面</p>
+    <p class="msg"></p>
+</div>
+<div class="wrapper">
+    <button class="call-native" onclick="callNative1()">检测原生test()方法</button>
+    <button class="call-native" onclick="callNative2()">检测原生testSync()方法</button>
+    <button class="call-native" onclick="callNative3()">调用原生call - testSync()同步方法</button>
+    <button class="call-native" onclick="callNative4()">调用原生call - testAsync()异步方法</button>
+    <button class="call-native" onclick="callNative5()">关闭当前页面</button>
+    <button class="call-native" onclick="callNative6()">命名空间call - testSync()同步方法</button>
+    <button class="call-native" onclick="callNative7()">命名空间call - testAsync()同步方法</button>
+    <button class="call-native" onclick="callNative8()">调用原生未定义的showToast()方法</button>
+    <button class="call-native" onclick="callNative9()">h5 调用history.back()返回</button>
+<!--    <div>-->
+<!--        <a href="https://www.baidu.com">百度</a>-->
+<!--    </div>-->
+</div>
+</body>
+<script>
+    function showAlert() {
+        alert("原生调用JS函数")
+        return "H5 showAlert()函数的返回值"
+    }
+
+    function show(msg) {
+        alert("原生调用JS带参的函数 ")
+        return msg + " H5 show()函数的返回值"
+    }
+
+      const callNative1 = () => {
+        let have = dsBridge.hasNativeMethod("test")
+        updateMsg("test方法 " + have)
+    }
+
+
+      const callNative2 = () => {
+       let have = dsBridge.hasNativeMethod("testSync")
+        updateMsg("testSync方法 " + have)
+    }
+
+    const callNative3 = () => {
+        // 同步
+        let msg = dsBridge.call('testSync', JSON.stringify({data: 100}))
+        updateMsg(msg)
+    }
+
+    const callNative4 = () => {
+        // 异步
+        dsBridge.call('testAsync', JSON.stringify({data: 200}), (msg) => {
+            updateMsg(msg)
+        })
+
+    }
+
+     const callNative5 = () => {
+        //  dsBridge.close()
+        close()
+    }
+
+    const callNative6 = () => {
+        let msg =  dsBridge.call('namespace.testSync',{msg:'来自js命名空间的数据'})
+        updateMsg(msg)
+    }
+
+    const callNative7 = () => {
+          dsBridge.call('namespace.testAsync', 'test', (msg) => {
+            updateMsg(msg)
+        })
+    }
+
+     const callNative8 = () => {
+            dsBridge.call('showToast', 'msg from h5')
+         // let data = dsBridge.call(null,'msg')
+         // updateMsg(data)
+    }
+
+    const callNative9 = () => {
+        history.back()
+    }
+
+
+    const register1 = () => {
+        dsBridge.register('showAlert', function (a, b, c) {
+            // return "原生调用JS showAlert函数"
+             alert("原生调用JS showAlert函数" + a + " " + b + " " + c)
+            return true
+        })
+    }
+
+
+    const register2 = () => {
+        dsBridge.registerAsyn('showAlertAsync', function (a, b, c, callback) {
+            let counter = 0
+            let id = setInterval(() => {
+                if (counter < 5) {
+                    callback(counter, false)
+                    alert("原生调用JS showAlertAsync函数" + a + " " + b + " " + c + " " + counter)
+                    counter++
+                } else {
+                    callback(counter, true)
+                     alert("原生调用JS showAlertAsync函数" + a + " " + b + " " + c + " " + counter)
+                    clearInterval(id)
+                }
+            }, 1000)
+
+        })
+    }
+
+
+    const register3 = () => {
+        // namespace
+        dsBridge.register('sync', {
+            test: function (a, b) {
+                return "namespace:  " + (a + b)
+            }
+        })
+
+        dsBridge.registerAsyn("asny",{
+            test: function (a,b ,callback) {
+                callback("namespace:  " + (a + b))
+            }
+        })
+    }
+
+
+    register1()
+    register2()
+    register3()
+
+
+    function updateMsg(msg) {
+        let msgEle = document.querySelector(".msg");
+        msgEle.innerHTML = msg
+    }
+
+
+</script>
+</html>
